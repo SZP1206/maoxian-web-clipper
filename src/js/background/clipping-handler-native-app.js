@@ -8,7 +8,8 @@
       require('../lib/log.js'),
       require('../lib/translation.js'),
       require('../lib/storage.js'),
-      require('./saving-tool.js')
+      require('./saving-tool.js'),
+      require('./fetcher.js')
     );
   } else {
     // browser or other
@@ -19,9 +20,10 @@
       root.MxWcI18N,
       root.MxWcStorage,
       root.MxWcSavingTool,
+      root.MxWcFetcher
     );
   }
-})(this, function(ENV, T, Log, I18N, MxWcStorage, SavingTool, undefined) {
+})(this, function(ENV, T, Log, I18N, MxWcStorage, SavingTool, Fetcher, undefined) {
   "use strict";
 
   const APP_NAME = 'maoxian_web_clipper_native';
@@ -52,10 +54,35 @@
     saveTask(task);
   }
 
-
   function saveTask(task) {
-    task.type = ['download', task.type].join('.');
-    state.port.postMessage(task);
+    if (task.type === 'url' && T.isVersionGteq(state.version, '0.2.4')) {
+      // In order to utilize browser's cache
+      // we move download to browser.
+      // since 0.2.4
+      Fetcher.get(task.url, {
+        respType: 'blob',
+        headers: task.headers,
+        timeout: task.timeout,
+      }).then((blob) => {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const binaryString = reader.result;
+          task.encode = 'base64'
+          task.content = btoa(binaryString);
+          task.type = 'download.url'
+          state.port.postMessage(task);
+        }
+
+        reader.readAsBinaryString(blob);
+      },
+        (err) => {
+          SavingTool.taskFailed(task.filename, err.message);
+        }
+      );
+    } else {
+      task.type = ['download', task.type].join('.');
+      state.port.postMessage(task);
+    }
   }
 
   function isMainFile(filename) {
