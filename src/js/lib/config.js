@@ -30,6 +30,7 @@
       saveIcon: false,
       saveWebFont: false,
       saveCssImage: false,
+      embedCss: true,
       htmlSaveClippingInformation: false,
 
       mdSaveClippingInformation: false,

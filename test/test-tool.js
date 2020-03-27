@@ -151,5 +151,18 @@ describe('Tool', () => {
     H.assertEqual(T.sanitizeFilename('x`c++`x-'), 'x-c++-x')
   });
 
+  it('createMarker', () => {
+    const marker = T.createMarker();
+    let str = "abc$1\ndef$2";
+    str = str.replace(/\$\d/mg, (match) => {
+      const replacement = marker.next();
+      marker.values.push(match);
+      return replacement;
+    })
+    str = marker.replaceBack(str, (v, index) => {
+      return "@" + index + v
+    })
+    H.assertEqual(str, "abc@0$1\ndef@1$2")
+  });
 
 })

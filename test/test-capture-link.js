@@ -25,7 +25,7 @@ function getCapturer() {
 
 function getNode(html) {
   const {doc} = DOMTool.parseHTML(html);
-  return doc.head.children[0];
+  return {doc: doc, node: doc.head.children[0]};
 }
 
 function getParams() {
@@ -56,9 +56,12 @@ describe('Capture link', () => {
   function initTest(html) {
     const text = 'body{font-size:12pt;}';
     ExtMsg.mockFetchTextStatic(text);
+    const {doc, node} = getNode(html);
+    params = getParams();
+    params.doc = doc;
     return {
-      node: getNode(html),
-      params: getParams(),
+      node: node,
+      params: params,
       Capturer: getCapturer(),
     }
   }
@@ -131,6 +134,21 @@ describe('Capture link', () => {
     const r = await Capturer.capture(node, params);
     H.assertEqual(r.tasks.length, 0);
     H.assertTrue(r.node.hasAttribute('data-mx-ignore-me'));
+  });
+
+  async function testCaptureStylesheetEmbed(html) {
+    const {node, params, Capturer} = initTest(html);
+    params.config.embedCss = true;
+    const r = await Capturer.capture(node, params);
+    const text = 'body{font-size:12pt;}';
+    H.assertEqual(r.tasks.length, 0);
+    H.assertEqual(r.node.tagName.toUpperCase(), 'STYLE');
+    H.assertEqual(r.node.innerHTML, "\n" + text);
+  }
+
+  it('capture rel="stylesheet" , should embed', async() => {
+    const html = '<link rel="stylesheet" href="StyleA.css">';
+    await testCaptureStylesheetEmbed(html);
   });
 
 
