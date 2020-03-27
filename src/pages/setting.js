@@ -59,6 +59,11 @@
       'save-css-image',
       'saveCssImage'
     );
+    initCheckboxInput(config,
+      'embed-css',
+      'embedCss'
+    );
+
     // - markdown
     initCheckboxInput(config,
       'md-save-clipping-information',
